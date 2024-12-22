@@ -5,83 +5,126 @@ import {
 	INodeProperties
 } from 'n8n-workflow';
 
-export const operationFields: INodeProperties[] = [
+export const operationFields = [
     {
         displayName: 'Operation',
         name: 'operation',
         type: 'options',
-        noDataExpression: true,
         displayOptions: {
             show: {
-                resource: [
-                    'calendar',
-                    'event'
-                ],
+                resource: ['calendar'],
             },
         },
         options: [
             {
                 name: 'Get Many',
                 value: 'getMany',
-                action: 'Get multiple available calendars',
+                description: 'Retrieve multiple calendars',
             },
         ],
         default: 'getMany',
-        required: true,
+    },
+    {
+        displayName: 'Operation',
+        name: 'operation',
+        type: 'options',
+        displayOptions: {
+            show: {
+                resource: ['event'],
+            },
+        },
+        options: [
+            {
+                name: 'Get Many',
+                value: 'getMany',
+                description: 'Retrieve multiple events from a calendar',
+            },
+            {
+                name: 'Create',
+                value: 'create',
+                description: 'Create a new event in a calendar',
+            },
+        ],
+        default: 'getMany',
     },
     {
         displayName: 'Calendar',
         name: 'calendar',
         type: 'options',
+        displayOptions: {
+            show: {
+                resource: ['event'],
+                operation: ['getMany', 'create'],
+            },
+        },
         typeOptions: {
             loadOptionsMethod: 'getCalendars',
         },
-        displayOptions: {
-            show: {
-                resource: [
-                    'event'
-                ],
-                operation: [
-                    'getMany'
-                ],
-            },
-        },
         default: '',
-        description: 'The calendar to fetch events from',
-        required: true,
     },
     {
-        displayName: 'Start',
+        displayName: 'Start Date',
         name: 'start',
         type: 'dateTime',
         displayOptions: {
             show: {
-                resource: [
-                    'event'
-                ],
-                operation: [
-                    'getMany'
-                ],
+                resource: ['event'],
+                operation: ['getMany'],
             },
         },
-        default: '={{ $now.toISO() }}',
-        description: 'The lower bound of the time range to get events for',
+        required: true,
+        default: '',
     },
     {
-        displayName: 'End',
+        displayName: 'End Date',
         name: 'end',
         type: 'dateTime',
         displayOptions: {
             show: {
-                resource: [
-                    'event'
-                ],
-                operation: [
-                    'getMany'
-                ],
+                resource: ['event'],
+                operation: ['getMany'],
             },
         },
-        default: '={{ $now.plus({ day: 30 }).toISO() }}',
-        description: 'The upper bound of the time range to get events for',
-    }
+        required: true,
+        default: '',
+    },
+    {
+        displayName: 'Summary',
+        name: 'summary',
+        type: 'string',
+        displayOptions: {
+            show: {
+                resource: ['event'],
+                operation: ['create'],
+            },
+        },
+        required: true,
+        default: '',
+    },
+    {
+        displayName: 'Description',
+        name: 'description',
+        type: 'string',
+        displayOptions: {
+            show: {
+                resource: ['event'],
+                operation: ['create'],
+            },
+        },
+        required: false,
+        default: '',
+    },
+    {
+        displayName: 'Location',
+        name: 'location',
+        type: 'string',
+        displayOptions: {
+            show: {
+                resource: ['event'],
+                operation: ['create'],
+            },
+        },
+        required: false,
+        default: '',
+    },
 ];
