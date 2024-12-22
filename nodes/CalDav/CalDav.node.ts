@@ -1,25 +1,19 @@
-/* eslint-disable n8n-nodes-base/node-class-description-credentials-name-unsuffixed */
-
 import {
-	IExecuteFunctions,
+    IExecuteFunctions,
 } from 'n8n-core';
-
 import {
     ILoadOptionsFunctions,
-	INodeExecutionData,
-	INodePropertyOptions,
-	INodeType,
-	INodeTypeDescription,
+    INodeExecutionData,
+    INodePropertyOptions,
+    INodeType,
+    INodeTypeDescription,
 } from 'n8n-workflow';
-
-import {
-    operationFields,
-} from './OperationDescription';
-
 import {
     getCalendars,
     getEvents,
+    createEvent, // Import the new function
 } from './GenericFunctions';
+import { operationFields } from './OperationDescription';
 
 export class CalDav implements INodeType {
     description: INodeTypeDescription = {
@@ -65,51 +59,45 @@ export class CalDav implements INodeType {
     };
 
     methods = {
-		loadOptions: {
-			async getCalendars(
-				this: ILoadOptionsFunctions,
-			): Promise<INodePropertyOptions[]> {
-				const returnData: INodePropertyOptions[] = [];
-				const calendars = await getCalendars.call(this);
-                
-                for (const calendar of calendars) {
-                    returnData.push({
-                        name: calendar.displayName as string,
-                        value: calendar.displayName as string,
-                    });
-                }
-				return returnData;
-			},
-		},
-	};
+        loadOptions: {
+            async getCalendars(
+                this: ILoadOptionsFunctions,
+            ): Promise<INodePropertyOptions[]> {
+                const calendars = await getCalendars.call(this);
+                return calendars.map(calendar => ({
+                    name: calendar.name || 'Unknown',
+                    value: calendar.id || '',
+                }));
+            },
+        },
+    };
 
     async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
-        // const items = this.getInputData();
+        const items = this.getInputData();
+        let responseData;
+
         const resource = this.getNodeParameter('resource', 0) as string;
         const operation = this.getNodeParameter('operation', 0) as string;
-        const results = [];
 
-        if (resource === 'calendar' && operation === 'getMany') {
-            const calendars = await getCalendars.call(this);
-            for (const calendar of calendars) {
-                results.push({
-                    json: calendar as any,
-                });
+        if (resource === 'calendar') {
+            if (operation === 'getMany') {
+                responseData = await getCalendars.call(this);
             }
-        } else if (resource === 'event' && operation === 'getMany') {
-            const events = await getEvents.call(
-                this,
-                this.getNodeParameter('calendar', 0) as string,
-                this.getNodeParameter('start', 0) as string,
-                this.getNodeParameter('end', 0) as string
-            );
-            for (const event of events) {
-                results.push({
-                    json: event as any,
-                });
+        } else if (resource === 'event') {
+            if (operation === 'getMany') {
+                const calendarId = this.getNodeParameter('calendar', 0) as string;
+                const startDate = this.getNodeParameter('start', 0) as string;
+                const endDate = this.getNodeParameter('end', 0) as string;
+                responseData = await getEvents.call(this, calendarId, startDate, endDate);
+            } else if (operation === 'create') {
+                const calendarId = this.getNodeParameter('calendar', 0) as string;
+                const summary = this.getNodeParameter('summary', 0) as string;
+                const description = this.getNodeParameter('description', 0) as string;
+                const location = this.getNodeParameter('location', 0) as string;
+                responseData = await createEvent.call(this, calendarId, summary, description, location);
             }
         }
 
-        return this.prepareOutputData(results);        
+        return [this.helpers.returnJsonArray(responseData)];
     }
 }
